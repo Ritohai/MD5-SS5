@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+</head>
+
+<body>
+<h1 style="text-align: center">Quản lí công việc cần làm</h1>
+<form action="" id="form">
+    <label for="name">Thêm việc cần làm:</label>
+    <input type="text" id="name" aria-describedby="helpId" placeholder="Công việc">
+    <button class="btn btn-success" id="btn">Add</button>
+</form>
+<br>
+<table class="table">
+    <thead>
+    <tr>
+        <th scope="col">STT</th>
+        <th scope="col">Công việc</th>
+        <th scope="col">Trạng thái</th>
+        <th scope="col" colspan="2">Hành dộng</th>
+    </tr>
+    </thead>
+    <tbody id="list">
+
+    </tbody>
+</table>
+
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+        crossorigin="anonymous"></script>
+
+<!-- Hiển thị tất cả -->
+<script>
+    const getData = () => {
+        $.ajax({
+            method: "GET",
+            url: "http://localhost:8080/todo",
+            dataType: "JSON",
+            success: (response) => {
+                let _html = ``;
+                response.forEach((element, index) => {
+                    _html += `<tr>
+                        <td>${index + 1}</td>
+                        <td>${element.name}</td>
+                        <td>${element.status ? 'Chưa hoàn thành' : 'Hoàn thành'}</td>
+                        <td>
+                            <button type="button" class="edit" data-id="${element.id}">Edit</button>
+                            <button type="button" class="delete" data-id="${element.id}" data-nameEdit="${element.name}">Delete</button>
+                        </td>
+                        </tr>`;
+                });
+                $("#list").html(_html);
+            },
+            error: (err) => {
+                console.log(err);
+            }
+        })
+    }
+    getData();
+</script>
+
+<!-- Thêm mới -->
+<script>
+    $("#btn").click((e) => {
+        let name = $('#name').val();
+        let _data = { name: name, status: 1 };
+        _data = JSON.stringify(_data);
+        $.ajax({
+            method: "POST",
+            url: "http://localhost:8080/todo",
+            data: _data,
+            dataType: "JSON",
+            contentType: "application/json",
+            success: (response) => {
+                Swal.fire({
+                    position: "top-center",
+                    icon: "success",
+                    title: "Thêm mới thành công",
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+                $('#name').val("");
+                getData();
+            },
+            error: (err) => {
+                console.log(err)
+            }
+
+        })
+        e.preventDefault();
+    })
+</script>
+
+<!-- Sửa -->
+<script>
+    $(document).on("click", ".edit", function (e) {
+        let id = $(this).data("id");
+        $.ajax({
+            method: "GET",
+            url: "http://localhost:8080/todo/" + id,
+            dataType: "JSON",
+            id: id,
+            success: (response) => {
+                let _html = ``;
+                _html += `
+                <label>Sửa việc cần làm:</label>
+                <input type="hidden" value="${response.id}" id="idEdit">
+                <input type="text" id="nameEdit" value="${response.name}" placeholder="Công việc">
+                 <button class="btn btn-warning" type="submit" id="update">Update</button>
+                `;
+                $("#form").html(_html);
+            },
+            error: (err) => {
+                console.log(err);
+            }
+        })
+
+    })
+</script>
+<script>
+    $(document).on("click", "#update", (e) => {
+        let id = $("#idEdit").val();
+        console.log(id);
+        let name = $("#nameEdit").val();
+        console.log(name);
+        let _data = { name: name, status: 1 };
+        _data = JSON.stringify(_data);
+
+        $.ajax({
+            method: "PUT",
+            dataType: "JSON",
+            contentType: "application/json",
+            url: "http://localhost:8080/todo/" + id,
+            data: _data,
+            success: (response) => {
+                Swal.fire({
+                    position: "top-center",
+                    icon: "success",
+                    title: "Sửa thành công",
+                    showConfirmButton: false,
+                    timer: 1500,
+                });
+                getData();
+                $("#nameEdit").val("");
+                reserForm();
+            },
+            error: (err) => {
+                console.log(err);
+            }
+        })
+        e.preventDefault();
+    })
+
+</script>
+
+<!-- Xóa -->
+<script>
+    $(document).on("click", ".delete", function () {
+        let id = $(this).data("id");
+        $.ajax({
+            method: "DELETE",
+            url: "http://localhost:8080/todo/" + id,
+            dataType: "JSON",
+            id: id,
+            success: (response) => {
+                console.log(response);
+                Swal.fire({
+                    position: "top-center",
+                    icon: "success",
+                    title: "Xóa thành công",
+                    showConfirmButton: false,
+                    timer: 1500,
+                });
+                getData();
+                location.reload();
+            },
+            error: (err) => {
+                console.log(err);
+            },
+        });
+    });
+</script>
+</body>
+
+</html>
